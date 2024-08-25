@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	"github.com/spencerscot917/proglog/internal/server"
 	"github.com/spencerscott917/proglog/internal/server"
 )
 
