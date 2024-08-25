@@ -39,12 +39,12 @@ func NewHttpServer(addr string) *http.Server {
 	router.HandleFunc("/", httpServer.handleProduce).Methods("POST")
 	router.HandleFunc("/", httpServer.handleConsume).Methods("GET")
 	return &http.Server{
-		Addr: addr,
+		Addr:    addr,
 		Handler: router,
 	}
 }
 
-// Unmarshal json into struct, append body to log, write response
+// Unmarshal json into struct, append body to log, marshal and write response
 func (srv *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 	var req ProduceRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -53,7 +53,7 @@ func (srv *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	offset, err := srv.Log.Append(req.Record)
-	if err := nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -66,6 +66,25 @@ func (srv *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
-	return
+	var req ConsumeRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	record, err := srv.Log.Read(req.Offset)
+	if err == ErrorOffsetNotFound {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res := ConsumeResponse{Record: record}
+	err := json.NewEncoder(w).Encode(res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
-
