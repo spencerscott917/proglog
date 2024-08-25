@@ -27,6 +27,23 @@ type ConsumeResponse struct {
 	Record Record
 }
 
+func newHttpServer() *httpServer {
+	return &httpServer{
+		Log: NewLog(),
+	}
+}
+
+func NewHttpServer(addr string) *http.Server {
+	httpServer := *newHttpServer()
+	router := mux.NewRouter()
+	router.HandleFunc("/", httpServer.handleProduce).Methods("POST")
+	router.HandleFunc("/", httpServer.handleConsume).Methods("GET")
+	return &http.Server{
+		Addr: addr,
+		Handler: router,
+	}
+}
+
 // Unmarshal json into struct, append body to log, write response
 func (srv *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 	var req ProduceRequest
@@ -52,19 +69,3 @@ func (srv *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func newHttpServer() *httpServer {
-	return &httpServer{
-		Log: NewLog(),
-	}
-}
-
-func NewHttpServer(addr string) *http.Server {
-	httpServer := *newHttpServer()
-	router := mux.NewRouter()
-	router.HandleFunc("/", httpServer.handleProduce).Methods("POST")
-	router.HandleFunc("/", httpServer.handleConsume).Methods("GET")
-	return &http.Server{
-		Addr: addr,
-		Handler: router,
-	}
-}
